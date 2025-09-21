@@ -399,7 +399,7 @@ const ExperimentSuggestion = () => {
                         id={`ai-doable-${index}`}
                       />
                       <label htmlFor={`ai-doable-${index}`} className="text-sm">
-                        AI Doable
+                        Experiment By AI
                       </label>
                     </div>
                   </div>
