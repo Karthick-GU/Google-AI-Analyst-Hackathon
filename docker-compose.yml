@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/credentials.json:/app/credentials.json:ro
+    environment:
+      - PROJECT_ID=agentic-ai-388410
+      - GCS_BUCKET=agentic-ai-data-hackathon
+      - GOOGLE_API_KEY=AIzaSyC2nmIohYwFInD3eLgNPCJG-24BUPYO07o
+      - BQ_DATASET=bmc
+      - BQ_TABLE=bmc_results
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy

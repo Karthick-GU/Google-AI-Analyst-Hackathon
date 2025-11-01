@@ -74,7 +74,7 @@ const BMCEditor = () => {
 
       // Call the hypotheses generation API
       const response = await fetch(
-        "https://startup-ai-analyst-google-awgqebcrh3bgbne4.centralindia-01.azurewebsites.net/generate_hypotheses",
+        "https://gg-api-243440749681.europe-west1.run.app/run_hypotheses_agent",
         {
           method: "POST",
           headers: {
@@ -104,7 +104,7 @@ const BMCEditor = () => {
 
       // Add the new hypotheses with projectId
       hypothesesList.push({
-        hypotheses: result.hypothesis_data.hypotheses,
+        hypotheses: result.hypotheses,
         projectId: parseInt(projectId!),
       });
 

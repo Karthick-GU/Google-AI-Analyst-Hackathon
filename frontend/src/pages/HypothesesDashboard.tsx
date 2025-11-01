@@ -325,7 +325,7 @@ const HypothesesDashboard = () => {
 
       // Call the experiments generation API
       const response = await fetch(
-        "https://startup-ai-analyst-google-awgqebcrh3bgbne4.centralindia-01.azurewebsites.net/generate_experiments",
+        "https://gg-api-243440749681.europe-west1.run.app/run_experiments_agent",
         {
           method: "POST",
           headers: {
@@ -360,10 +360,10 @@ const HypothesesDashboard = () => {
 
       if (projectIndex !== -1) {
         experimentsList[projectIndex].experiments =
-          result.experiment_data.experiments;
+          result.experiments;
       } else {
         experimentsList.push({
-          experiments: result.experiment_data.experiments,
+          experiments: result.experiments,
           projectId: parseInt(projectId!),
         });
       }

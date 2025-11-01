@@ -7,3 +7,8 @@ google-generativeai
 google-cloud-vision
 google-cloud-aiplatform
 python-multipart
+python-pptx
+python-docx
+google-cloud-documentai
+google-generativeai[adk]
+google-adk

@@ -14,4 +14,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .
 
 # Define default command
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "main_app:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -97,6 +97,38 @@ const ProjectIntake = () => {
       // Prepare project document string (file names)
       const projectDocument = files.map((file) => file.name).join(", ");
       let projectId = Math.floor(Math.random() * 1000000);
+      // helper: upload files for a project and return the uploaded filenames
+      const uploadFiles = async (projId: number, filesToUpload: File[]) => {
+        if (!filesToUpload || filesToUpload.length === 0) return [] as string[];
+        const form = new FormData();
+        form.append("project_id", String(projId));
+        filesToUpload.forEach((f) => form.append("files", f));
+
+        const resp = await fetch("https://gg-api-243440749681.europe-west1.run.app/file_upload", {
+          method: "POST",
+          body: form,
+        });
+        if (!resp.ok) throw new Error(`Upload failed: ${resp.status}`);
+        const data = await resp.json();
+        if (data && Array.isArray(data.uploaded)) {
+          return data.uploaded.map((u: string) => u.split("/").pop() || "");
+        }
+        return [] as string[];
+      };
+
+      // perform uploads for each category and get filenames
+      const pitchDeckNames = await uploadFiles(projectId, pitchDecks);
+      const callTranscriptNames = await uploadFiles(projectId, callTranscripts);
+      const founderUpdateNames = await uploadFiles(projectId, founderUpdates);
+      const emailNames = await uploadFiles(projectId, emails);
+
+      const allFileNames = [
+        ...pitchDeckNames,
+        ...callTranscriptNames,
+        ...founderUpdateNames,
+        ...emailNames,
+      ].filter(Boolean);
+
       // Create the data object
       const projectData = {
         project_name: formData.project_name,
@@ -108,10 +140,7 @@ const ProjectIntake = () => {
         cost_structure: formData.cost_structure,
         revenue_potential: formData.revenue_potential,
         project_id: projectId,
-        pitchDecks: pitchDecks.map((file) => file.name).join(", "),
-        callTranscripts: callTranscripts.map((file) => file.name).join(", "),
-        founderUpdates: founderUpdates.map((file) => file.name).join(", "),
-        emails: emails.map((file) => file.name).join(", "),
+        file_names: allFileNames.join(", "),
       };
 
       // Store in localStorage
@@ -135,7 +164,7 @@ const ProjectIntake = () => {
 
       // Call the API
       const response = await fetch(
-        "https://startup-ai-analyst-google-awgqebcrh3bgbne4.centralindia-01.azurewebsites.net/generate_bmc",
+        "https://gg-api-243440749681.europe-west1.run.app/run_bmc_pipeline",
         {
           method: "POST",
           headers: {
@@ -149,7 +178,7 @@ const ProjectIntake = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
-      let bmcData = result.business_model_canvas;
+      let bmcData = result;
 
       let storedBMCDataList = localStorage.getItem("bmcDataList");
       let bmcDataList: any[] = [];
@@ -186,7 +215,6 @@ const ProjectIntake = () => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setter((prev) => [...prev, ...newFiles]);
-      // Upload Files to Azure Blob Storage
     }
   };
 
