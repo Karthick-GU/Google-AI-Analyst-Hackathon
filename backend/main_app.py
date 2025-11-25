@@ -1,6 +1,7 @@
 ## Standard Libraries
 import os
 import json
+from os import environ
 from pathlib import Path
 from pydantic import BaseModel
 from typing import Any, Dict, List
@@ -21,13 +22,13 @@ from agents.bmc_agent import bmc_main
 from agents.hypothesis_agent import hypotheses_main
 from agents.experiments_agent import experiments_main
 
-environ = {
-    "PROJECT_ID": "agentic-ai-388410",
-    "GCS_BUCKET": "agentic-ai-data-hackathon",
-    "OCR_PROCESSOR_ID": "a9323d8299a0bf44",
-    "BQ_DATASET": "startup_dataset",
-    "BQ_TABLE": "bmc_table",
-}
+# environ = {
+#     "PROJECT_ID": "agentic-ai-388410",
+#     "GCS_BUCKET": "agentic-ai-data-hackathon",
+#     "OCR_PROCESSOR_ID": "a9323d8299a0bf44",
+#     "BQ_DATASET": "startup_dataset",
+#     "BQ_TABLE": "bmc_table",
+# }
 
 ## Configurations
 GEMINI_API_KEY = "AIzaSyC2nmIohYwFInD3eLgNPCJG-24BUPYO07o"
@@ -75,6 +76,34 @@ class ExperimentRequest(BaseModel):
     sector: str
 
 
+# os.environ = {
+#     "PROJECT_ID": "agentic-ai-analyst",
+#     "PRIVATE_KEY_ID": "cbeea718d6d6bf3b495428b9be715c29368b4d20",
+#     "PRIVATE_KEY": f"-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC9LSMOmj+6E9IB\nna5J4knRyRjIbTiKdzQKE6kvlzYrSF/EIKC0mSrJvXBMtogaM4v8mYgIzp0W7q+S\niyKSHu0SYe8O6FYYh06vPH3y1aZCqSYnMndhwfFrOpSznvx+CyphM19ZKoF4aoED\nDnygVus9o+FIglFeHaaSYt9hgdyNrFubbR8Iy5LQJRwcHJHE9jYHJzJOB36paWpI\nx2MMohV9VqPzfl5tyQ8hKAqdMJCjgvzzRWAvTTYnmTPH/3ShfV8MuWErJNgS4XBZ\nBRR1ALcrqfVIPilA1cfWjBzUyzu5Q/wmygS7jIzFOf/7sJscvWY3xiuTxAM75rmq\nvj/m/5UxAgMBAAECggEAKAB9Yz8WrqA2TgUrr4/cEDI3vVnrFMx0ApV5twiAedKJ\n/Yzwrn+c3p/iOTZ3vSKdPUKx0zrtWMYL9i7ZlpBXjQWMaViTrAggiUl/UHQA/iOK\nX8t6Fv/NruDqRLkfpv9xbLBSPyaPzginUyAjFjyK7bPTlWOJFR+r81RY6+Nr4cDs\n40/spetnsYEVJg6ojR/vn2QO15GM79kpMfUqyzCAN8kZdi2Vawzm+n2NzAl9poKp\nhj14gtv9oLMQeVHIRLHnbq7PCiGSbAWjF6lDWsoPqwFjSgR4pxxVC2oVac6jB3Ae\nifwVZdCWSbnZvU0qkKm8tA3XOqngt+O3pl1SFujB4QKBgQD0Mx1+uXXCbDQ/Moyq\nshXeI0OQiR97GCQgimudd3+rHQuQhmCxDYa/uHeXJ7z7jrjuZTpP7/CjT0Dw8T2y\nN963N9Fh8LwT/zETEKzgq52GRjzGgBnWM5AOOTk/kT8FezTCwid4ZTDJ++ZYLJL1\np1DnidmMKMVHdqoYARHURs2tXQKBgQDGUVo7AaLthiz2WOJt23wrH7X/xGG+AkmE\ngRhUx4FN4qbmqSvMUz+Acp4xvTbPyeTErsvMOTgivNgSulctZl2EY7Lfny/lQxb6\n8eJJzjz672HoocvTco+A8Z0vSU90+cMBMjEihn/kcEixPvjZtCcfI/UPSBjwkiHa\nodwlf2h15QKBgQDwpCZeqNf4vbRGysN/unp+KvX7yoSxQrrnLkCaLhYrQzYQN7u0\n/gVZjKic1dYPdzeaBTsPZv0VkZYHWVNY+mGI34KAJ0DP29w6U2ZpB/T1SuW9HqNX\nR/yfZ5iYocMe3ajCe511sRIBGTCGl3ZCiZzabidpTQwLPk6j1PoC27r3KQKBgQC0\n6wRgriZ/f5dHCWFPjRqikKRM90+fsqB04/xZY0Of1PQjmxMcrJlSyb1tbMszFmC/\n2SKMZWrDrfmEZEAhZ7BKlVVaUfO0t9agCchBQoc4+Ocd/XRfqrQlksWtnLiC41M1\npR9T+tVzhcebAvKsUIAcFYZ7cW9nEDkYJe8aujeGzQKBgAmsyCfjvU7WKqtSl2jB\nDXNi9/J9p3sStxKoxBmDMtbHC7w/c8UibGLsrwbQzjMLGF5/QKpL8+wivsFq755f\nibJc8jMtdopC7eeUhEgLgrvcDwboBBc9iISk7DRTRkoEVMNQmbK98/DKQ6O47m+a\n4tYh4fl+WeAzp5djRI2Sbi/c\n-----END PRIVATE KEY-----\n",
+#     "CLIENT_EMAIL": "hackathon@agentic-ai-analyst.iam.gserviceaccount.com",
+#     "CLIENT_ID": "114830137231418297486",
+#     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+#     "CLIENT_X509_CERT_URL": f"https://www.googleapis.com/robot/v1/metadata/x509/hackathon%40agentic-ai-analyst.iam.gserviceaccount.com",
+#     # "universe_domain": "googleapis.com",
+# }
+
+
+credentials = service_account.Credentials.from_service_account_info(
+    {
+        "type": "service_account",
+        "project_id": environ["PROJECT_ID"],
+        "private_key_id": environ["PRIVATE_KEY_ID"],
+        "private_key": environ["PRIVATE_KEY"].replace("\\n", "\n"),
+        "client_email": environ["CLIENT_EMAIL"],
+        "client_id": environ["CLIENT_ID"],
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": environ["CLIENT_X509_CERT_URL"],
+    }
+)
+
+
 # ---------- Utility: JSON sanitizer ----------
 def safe_load_json(s: str):
     """Safely parse JSON from LLM response, removing markdown wrappers."""
@@ -92,9 +121,6 @@ def update_bmc_table(data):
     - Dataset and table are taken from `environ` with sensible defaults.
     - The function will create the dataset/table if they don't exist.
     """
-    credentials = service_account.Credentials.from_service_account_file(
-        str(Path(__file__).parent / "credentials.json")
-    )
 
     client = bigquery.Client(
         project=environ["PROJECT_ID"],
@@ -173,10 +199,7 @@ async def run_bmc(file_paths: List[str]) -> Dict[str, Any]:
 def vision_extract_text(file_bytes: bytes, mime_type: str) -> str:
     """Extract text from images or PDFs using Google Vision API."""
     try:
-        creds = service_account.Credentials.from_service_account_file(
-            str(Path(__file__).parent / "credentials.json")
-        )
-        client = vision.ImageAnnotatorClient(credentials=creds)
+        client = vision.ImageAnnotatorClient(credentials=credentials)
 
         if mime_type == "application/pdf":
             image = vision.Image(content=file_bytes)
@@ -231,10 +254,6 @@ async def upload_file_to_bucket(
     Returns JSON with uploaded gs:// URIs.
     """
     try:
-
-        credentials = service_account.Credentials.from_service_account_file(
-            str(Path(__file__).parent / "credentials.json")
-        )
 
         storage_client = storage.Client(
             project=environ["PROJECT_ID"],
@@ -319,8 +338,8 @@ async def extract_text_endpoint(file: UploadFile = File(...)):
         return {"error": f"Failed to extract text: {str(e)}"}
 
 
-# # ---------- Run locally ----------
-# if __name__ == "__main__":
-#     import uvicorn
+# ---------- Run locally ----------
+if __name__ == "__main__":
+    import uvicorn
 
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
