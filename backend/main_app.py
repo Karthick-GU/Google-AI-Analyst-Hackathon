@@ -1,43 +1,20 @@
 ## Standard Libraries
-import os
 import json
 from os import environ
-from pathlib import Path
+import re
 from pydantic import BaseModel
 from typing import Any, Dict, List
-from fastapi import FastAPI, File, Request, UploadFile, Body, Form
+from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 ## Google Libraries
-from google.adk.agents import LlmAgent, SequentialAgent
-from google.adk.sessions import InMemorySessionService
-import google.generativeai as generativeai
-from google.adk.runners import Runner
-from google.cloud import vision, storage, bigquery
-from google.genai import types
 from google.oauth2 import service_account
+from google.cloud import vision, storage, bigquery
 
 # from google import genai
 from agents.bmc_agent import bmc_main
 from agents.hypothesis_agent import hypotheses_main
 from agents.experiments_agent import experiments_main
-
-# environ = {
-#     "PROJECT_ID": "agentic-ai-388410",
-#     "GCS_BUCKET": "agentic-ai-data-hackathon",
-#     "OCR_PROCESSOR_ID": "a9323d8299a0bf44",
-#     "BQ_DATASET": "startup_dataset",
-#     "BQ_TABLE": "bmc_table",
-# }
-
-## Configurations
-GEMINI_API_KEY = "AIzaSyC2nmIohYwFInD3eLgNPCJG-24BUPYO07o"
-os.environ["GOOGLE_API_KEY"] = "AIzaSyC2nmIohYwFInD3eLgNPCJG-24BUPYO07o"
-generativeai.configure(api_key=GEMINI_API_KEY)
-
-# Choose model (Gemini Pro is best for text reasoning)
-chat_model = generativeai.GenerativeModel("gemini-2.5-flash")
-
 
 ## FastAPI App Initialization
 app = FastAPI(title="ADK BMC Pipeline", version="1.0.0")
@@ -65,33 +42,22 @@ class BMCRequest(BaseModel):
 
 
 class HypothesisRequest(BaseModel):
-    bmc_data: Dict[str, Any]
+    bmc_data: List[Dict[str, Any]]
+    project_id: int
     project_description: str
     sector: str
 
 
 class ExperimentRequest(BaseModel):
     hypotheses: List[Dict[str, Any]]
+    project_id: int
     project_description: str
     sector: str
-
-
-# os.environ = {
-#     "PROJECT_ID": "agentic-ai-analyst",
-#     "PRIVATE_KEY_ID": "cbeea718d6d6bf3b495428b9be715c29368b4d20",
-#     "PRIVATE_KEY": f"-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC9LSMOmj+6E9IB\nna5J4knRyRjIbTiKdzQKE6kvlzYrSF/EIKC0mSrJvXBMtogaM4v8mYgIzp0W7q+S\niyKSHu0SYe8O6FYYh06vPH3y1aZCqSYnMndhwfFrOpSznvx+CyphM19ZKoF4aoED\nDnygVus9o+FIglFeHaaSYt9hgdyNrFubbR8Iy5LQJRwcHJHE9jYHJzJOB36paWpI\nx2MMohV9VqPzfl5tyQ8hKAqdMJCjgvzzRWAvTTYnmTPH/3ShfV8MuWErJNgS4XBZ\nBRR1ALcrqfVIPilA1cfWjBzUyzu5Q/wmygS7jIzFOf/7sJscvWY3xiuTxAM75rmq\nvj/m/5UxAgMBAAECggEAKAB9Yz8WrqA2TgUrr4/cEDI3vVnrFMx0ApV5twiAedKJ\n/Yzwrn+c3p/iOTZ3vSKdPUKx0zrtWMYL9i7ZlpBXjQWMaViTrAggiUl/UHQA/iOK\nX8t6Fv/NruDqRLkfpv9xbLBSPyaPzginUyAjFjyK7bPTlWOJFR+r81RY6+Nr4cDs\n40/spetnsYEVJg6ojR/vn2QO15GM79kpMfUqyzCAN8kZdi2Vawzm+n2NzAl9poKp\nhj14gtv9oLMQeVHIRLHnbq7PCiGSbAWjF6lDWsoPqwFjSgR4pxxVC2oVac6jB3Ae\nifwVZdCWSbnZvU0qkKm8tA3XOqngt+O3pl1SFujB4QKBgQD0Mx1+uXXCbDQ/Moyq\nshXeI0OQiR97GCQgimudd3+rHQuQhmCxDYa/uHeXJ7z7jrjuZTpP7/CjT0Dw8T2y\nN963N9Fh8LwT/zETEKzgq52GRjzGgBnWM5AOOTk/kT8FezTCwid4ZTDJ++ZYLJL1\np1DnidmMKMVHdqoYARHURs2tXQKBgQDGUVo7AaLthiz2WOJt23wrH7X/xGG+AkmE\ngRhUx4FN4qbmqSvMUz+Acp4xvTbPyeTErsvMOTgivNgSulctZl2EY7Lfny/lQxb6\n8eJJzjz672HoocvTco+A8Z0vSU90+cMBMjEihn/kcEixPvjZtCcfI/UPSBjwkiHa\nodwlf2h15QKBgQDwpCZeqNf4vbRGysN/unp+KvX7yoSxQrrnLkCaLhYrQzYQN7u0\n/gVZjKic1dYPdzeaBTsPZv0VkZYHWVNY+mGI34KAJ0DP29w6U2ZpB/T1SuW9HqNX\nR/yfZ5iYocMe3ajCe511sRIBGTCGl3ZCiZzabidpTQwLPk6j1PoC27r3KQKBgQC0\n6wRgriZ/f5dHCWFPjRqikKRM90+fsqB04/xZY0Of1PQjmxMcrJlSyb1tbMszFmC/\n2SKMZWrDrfmEZEAhZ7BKlVVaUfO0t9agCchBQoc4+Ocd/XRfqrQlksWtnLiC41M1\npR9T+tVzhcebAvKsUIAcFYZ7cW9nEDkYJe8aujeGzQKBgAmsyCfjvU7WKqtSl2jB\nDXNi9/J9p3sStxKoxBmDMtbHC7w/c8UibGLsrwbQzjMLGF5/QKpL8+wivsFq755f\nibJc8jMtdopC7eeUhEgLgrvcDwboBBc9iISk7DRTRkoEVMNQmbK98/DKQ6O47m+a\n4tYh4fl+WeAzp5djRI2Sbi/c\n-----END PRIVATE KEY-----\n",
-#     "CLIENT_EMAIL": "hackathon@agentic-ai-analyst.iam.gserviceaccount.com",
-#     "CLIENT_ID": "114830137231418297486",
-#     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-#     "CLIENT_X509_CERT_URL": f"https://www.googleapis.com/robot/v1/metadata/x509/hackathon%40agentic-ai-analyst.iam.gserviceaccount.com",
-#     # "universe_domain": "googleapis.com",
-# }
-
 
 credentials = service_account.Credentials.from_service_account_info(
     {
         "type": "service_account",
-        "project_id": environ["PROJECT_ID"],
+        "project_id": environ["PROJECT_ID_SA"],
         "private_key_id": environ["PRIVATE_KEY_ID"],
         "private_key": environ["PRIVATE_KEY"].replace("\\n", "\n"),
         "client_email": environ["CLIENT_EMAIL"],
@@ -114,7 +80,7 @@ def safe_load_json(s: str):
 
 
 # ================= Helper Functions =================
-def update_bmc_table(data):
+def update_table(data, table_name):
     """Append one or more JSON-serializable rows to a BigQuery table.
 
     - `data` may be a dict (single row) or a list of dicts (multiple rows).
@@ -123,13 +89,13 @@ def update_bmc_table(data):
     """
 
     client = bigquery.Client(
-        project=environ["PROJECT_ID"],
+        project=environ["PROJECT_ID_SA"],
         credentials=credentials,
     )
 
-    dataset_name = environ.get("BQ_DATASET", "bmc")
-    table_name = environ.get("BQ_TABLE", "bmc_results")
-    dataset_id = f"agentic-ai-analyst.{dataset_name}"
+    dataset_name = environ.get("BQ_DATASET")
+    project_id = environ.get("PROJECT_ID_SA")
+    dataset_id = f"{project_id}.{dataset_name}"
     table_id = f"{dataset_id}.{table_name}"
 
     # Normalize rows to a list
@@ -157,7 +123,7 @@ def update_bmc_table(data):
         table = bigquery.Table(table_id, schema=schema)
         client.create_table(table)
 
-    # Prepare rows for insertion (stringify non-strings)
+    # Prepare rows (stringify non-strings) and normalize field names
     prepared = []
     for r in rows:
         if isinstance(r, dict):
@@ -170,16 +136,117 @@ def update_bmc_table(data):
         else:
             prepared.append({"json_payload": json.dumps(r)})
 
-    errors = client.insert_rows_json(table_id, prepared)
-    if errors:
-        return {"status": "error", "errors": errors}
+    all_errors = []
 
-    return {"status": "ok", "inserted_rows": len(prepared)}
+    # For each row: if project-id exists, UPDATE that row; else INSERT.
+    for row in prepared:
+        try:
+            # Find a project id-like key in the row (e.g. project-id or project_id)
+            proj_key = None
+            for k in row.keys():
+                lk = k.lower()
+                if "project" in lk and "id" in lk:
+                    proj_key = k
+                    break
+
+            # If no project id in payload, fall back to inserting the row
+            if not proj_key:
+                insert_errors = client.insert_rows_json(table_id, [row])
+                if insert_errors:
+                    all_errors.extend(insert_errors)
+                continue
+
+            proj_val = row.get(proj_key)
+
+            # Check if a row with this project id already exists
+            check_sql = f"SELECT COUNT(1) AS cnt FROM `{table_id}` WHERE `{proj_key}` = @proj_val"
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("proj_val", "STRING", proj_val)
+                ]
+            )
+
+            check_job = client.query(check_sql, job_config=job_config)
+            check_result = list(check_job.result())
+            exists = False
+            if check_result and len(check_result) > 0:
+                exists = int(check_result[0].cnt) > 0
+
+            if exists:
+                # Build an UPDATE statement with parameters for each field
+                query_params = []
+                set_clauses = []
+                for k, v in row.items():
+                    # sanitize parameter name (letters, digits, underscore)
+                    pname = "p_" + re.sub(r"[^0-9a-zA-Z_]", "_", k)
+                    set_clauses.append(f"`{k}` = @{pname}")
+                    query_params.append(
+                        bigquery.ScalarQueryParameter(pname, "STRING", v)
+                    )
+
+                # Ensure we have a parameter for the WHERE clause that matches the proj_key
+                where_param_name = "p_where_proj_val"
+                query_params.append(
+                    bigquery.ScalarQueryParameter(where_param_name, "STRING", proj_val)
+                )
+
+                set_clause = ", ".join(set_clauses)
+                update_sql = f"UPDATE `{table_id}` SET {set_clause} WHERE `{proj_key}` = @{where_param_name}"
+
+                update_job = client.query(
+                    update_sql,
+                    job_config=bigquery.QueryJobConfig(query_parameters=query_params),
+                )
+                # force execution
+                _ = list(update_job.result())
+
+            else:
+                # Insert new row
+                insert_errors = client.insert_rows_json(table_id, [row])
+                if insert_errors:
+                    all_errors.extend(insert_errors)
+
+        except Exception as e:
+            all_errors.append({"row": row, "error": str(e)})
+
+    if all_errors:
+        return {"status": "error", "errors": all_errors}
+
+    return {"status": "ok", "processed_rows": len(prepared)}
+
+
+def get_data_from_table(table_name, project_id):
+    """Retrieve rows from a BigQuery table filtered by project_id.
+
+    - Dataset and table are taken from `environ` with sensible defaults.
+    - Returns a list of rows as dictionaries.
+    """
+
+    client = bigquery.Client(
+        project=environ["PROJECT_ID_SA"],
+        credentials=credentials,
+    )
+
+    dataset_name = environ.get("BQ_DATASET")
+    project_id_env = environ.get("PROJECT_ID_SA")
+    dataset_id = f"{project_id_env}.{dataset_name}"
+    table_id = f"{dataset_id}.{table_name}"
+
+    query_sql = f"SELECT * FROM `{table_id}` WHERE `project-id` = @project_id"
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("project_id", "STRING", str(project_id))
+        ]
+    )
+
+    query_job = client.query(query_sql, job_config=job_config)
+    results = query_job.result()
+
+    rows = [dict(row) for row in results]
+    return rows
 
 
 # ================= Pipeline Runner =================
-
-
 async def run_bmc(file_paths: List[str]) -> Dict[str, Any]:
     """
     Execute the complete sequential pipeline.
@@ -194,8 +261,6 @@ async def run_bmc(file_paths: List[str]) -> Dict[str, Any]:
 
 
 # ================= Vision API Integration =================
-
-
 def vision_extract_text(file_bytes: bytes, mime_type: str) -> str:
     """Extract text from images or PDFs using Google Vision API."""
     try:
@@ -256,10 +321,11 @@ async def upload_file_to_bucket(
     try:
 
         storage_client = storage.Client(
-            project=environ["PROJECT_ID"],
+            project=environ["PROJECT_ID_SA"],
             credentials=credentials,
         )
-        bucket_name = os.environ.get("GCS_BUCKET", "agentic-ai-data-hackathon")
+        bucket_name = environ.get("GCS_BUCKET","hackathon-data-bucket-001")
+        print(f"Uploaded bucket_name: {environ['PROJECT_ID_SA'],bucket_name}")
         bucket = storage_client.bucket(bucket_name)
 
         uploaded = []
@@ -274,7 +340,7 @@ async def upload_file_to_bucket(
         return {"uploaded": uploaded}
 
     except Exception as e:
-        return {"error": f"Failed to upload files: {str(e)}"}
+        return {"error": f"Failed to upload files: {str(e),environ['PROJECT_ID_SA'], bucket_name}"}
 
 
 @app.post("/run_bmc_pipeline")
@@ -288,7 +354,7 @@ async def run_bmc_pipeline_endpoint(request: BMCRequest):
     # request.file_names is expected as comma-separated names
     file_names_str = request.file_names
     file_paths = [
-        f"gs://agentic-ai-data-hackathon/{project_id}/{name.strip()}"
+        f"gs://hackathon-data-bucket-001/{project_id}/{name.strip()}"
         for name in file_names_str.split(",")
         if name.strip()
     ]
@@ -298,15 +364,27 @@ async def run_bmc_pipeline_endpoint(request: BMCRequest):
     ## Update table
     data = result.copy()
     data["project-id"] = str(project_id)
-    update_bmc_table(data)
+    update_table(data, table_name="BMC")
     return result
 
 
 @app.post("/run_hypotheses_agent")
 async def generate_hypotheses_endpoint(request: HypothesisRequest):
     """Generate Hypotheses from BMC"""
-    bmc_json = request.bmc_data
+    project_id = request.project_id
+    if request.bmc_data is None or len(request.bmc_data) == 0:
+        bmc_data = get_data_from_table("BMC", project_id)
+        if bmc_data and len(bmc_data) > 0:
+            bmc_json = bmc_data[0]
+        else:
+            return {"error": f"No BMC data found for project_id {project_id}"}
+    else:
+        bmc_json = request.bmc_data
     result = await hypotheses_main(bmc_json)
+    ## Update table
+    data = result.copy()
+    data["project-id"] = str(project_id)
+    update_table(data, table_name="Hypotheses")
     return result
 
 
@@ -314,13 +392,52 @@ async def generate_hypotheses_endpoint(request: HypothesisRequest):
 async def generate_experiments_endpoint(request: ExperimentRequest):
     """Generate experiments from hypotheses."""
     try:
-        bmc_json = request.hypotheses
-        result = await experiments_main(bmc_json)
+        project_id = request.project_id
+        hypotheses_json = request.hypotheses
+        if not hypotheses_json or len(hypotheses_json) == 0:
+            hypotheses_data = get_data_from_table("Hypotheses", project_id)
+            if hypotheses_data and len(hypotheses_data) > 0:
+                hypotheses_json = hypotheses_data[0]
+            else:
+                return {
+                    "error": f"No Hypotheses data found for project_id {project_id}"
+                }
 
+        result = await experiments_main(hypotheses_json)
+        ## Update table
+        data = result.copy()
+        data["project-id"] = str(project_id)
+        update_table(data, table_name="Experiments")
         return result
 
     except Exception as e:
         return {"error": f"Failed to generate experiments: {str(e)}"}
+
+
+@app.post("/get_data")
+async def get_data_endpoint(table_name: str, project_id: int):
+    """Retrieve data from specified table for given project_id."""
+    try:
+        data = get_data_from_table(table_name, project_id)
+        return {"data": data}
+    except Exception as e:
+        return {"error": f"Failed to retrieve data: {str(e)}"}
+
+@app.get("/get_all_data")
+async def get_all_data_endpoint(project_id: int):
+    """Retrieve all data (BMC, Hypotheses, Experiments) for given project_id."""
+    try:
+        bmc_data = get_data_from_table("BMC", project_id)
+        hypotheses_data = get_data_from_table("Hypotheses", project_id)
+        experiments_data = get_data_from_table("Experiments", project_id)
+
+        return {
+            "bmc_data": bmc_data,
+            "hypotheses_data": hypotheses_data,
+            "experiments_data": experiments_data,
+        }
+    except Exception as e:
+        return {"error": f"Failed to retrieve data: {str(e)}"}
 
 
 @app.post("/extract_text")

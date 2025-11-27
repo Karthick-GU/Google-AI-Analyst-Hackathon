@@ -1,12 +1,10 @@
 ## Google Libraries
 import json
-import os
 from google.adk.agents import LlmAgent
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from google.genai import types
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyC2nmIohYwFInD3eLgNPCJG-24BUPYO07o"
 APP_NAME = "ai_analyst"
 USER_ID = "1234"
 SESSION_ID = "session1234"
