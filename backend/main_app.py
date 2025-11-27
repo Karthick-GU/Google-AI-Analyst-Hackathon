@@ -54,6 +54,7 @@ class ExperimentRequest(BaseModel):
     project_description: str
     sector: str
 
+
 credentials = service_account.Credentials.from_service_account_info(
     {
         "type": "service_account",
@@ -231,13 +232,16 @@ def get_data_from_table(table_name, project_id):
     project_id_env = environ.get("PROJECT_ID_SA")
     dataset_id = f"{project_id_env}.{dataset_name}"
     table_id = f"{dataset_id}.{table_name}"
-
-    query_sql = f"SELECT * FROM `{table_id}` WHERE `project-id` = @project_id"
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("project_id", "STRING", str(project_id))
-        ]
-    )
+    if project_id is None:
+        query_sql = f"SELECT * FROM `{table_id}`"
+        job_config = None
+    else:
+        query_sql = f"SELECT * FROM `{table_id}` WHERE `project-id` = @project_id"
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("project_id", "STRING", str(project_id))
+            ]
+        )
 
     query_job = client.query(query_sql, job_config=job_config)
     results = query_job.result()
@@ -324,7 +328,7 @@ async def upload_file_to_bucket(
             project=environ["PROJECT_ID_SA"],
             credentials=credentials,
         )
-        bucket_name = environ.get("GCS_BUCKET","hackathon-data-bucket-001")
+        bucket_name = environ.get("GCS_BUCKET", "hackathon-data-bucket-001")
         print(f"Uploaded bucket_name: {environ['PROJECT_ID_SA'],bucket_name}")
         bucket = storage_client.bucket(bucket_name)
 
@@ -340,7 +344,9 @@ async def upload_file_to_bucket(
         return {"uploaded": uploaded}
 
     except Exception as e:
-        return {"error": f"Failed to upload files: {str(e),environ['PROJECT_ID_SA'], bucket_name}"}
+        return {
+            "error": f"Failed to upload files: {str(e),environ['PROJECT_ID_SA'], bucket_name}"
+        }
 
 
 @app.post("/run_bmc_pipeline")
@@ -364,6 +370,18 @@ async def run_bmc_pipeline_endpoint(request: BMCRequest):
     ## Update table
     data = result.copy()
     data["project-id"] = str(project_id)
+    project_details = {
+        "project_name": request.project_name,
+        "project_description": request.project_description,
+        "sector": request.sector,
+        "funding_stage": request.funding_stage,
+        "team_size": request.team_size,
+        "project_document": request.project_document,
+        "cost_structure": request.cost_structure,
+        "revenue_potential": request.revenue_potential,
+        "project-id": str(project_id),
+    }
+    update_table(project_details, table_name="Projects")
     update_table(data, table_name="BMC")
     return result
 
@@ -424,12 +442,12 @@ async def get_data_endpoint(table_name: str, project_id: int):
         return {"error": f"Failed to retrieve data: {str(e)}"}
 
 @app.get("/get_all_data")
-async def get_all_data_endpoint(project_id: int):
+async def get_all_data_endpoint():
     """Retrieve all data (BMC, Hypotheses, Experiments) for given project_id."""
     try:
-        bmc_data = get_data_from_table("BMC", project_id)
-        hypotheses_data = get_data_from_table("Hypotheses", project_id)
-        experiments_data = get_data_from_table("Experiments", project_id)
+        bmc_data = get_data_from_table("BMC", None)
+        hypotheses_data = get_data_from_table("Hypotheses", None)
+        experiments_data = get_data_from_table("Experiments", None)
 
         return {
             "bmc_data": bmc_data,
@@ -439,6 +457,17 @@ async def get_all_data_endpoint(project_id: int):
     except Exception as e:
         return {"error": f"Failed to retrieve data: {str(e)}"}
 
+
+@app.get("/get_all_project_data")
+async def get_all_project_data_endpoint():
+    """Retrieve all data (BMC, Hypotheses, Experiments) for given project_id."""
+    try:
+        ## Getting all project data
+        projects_data = get_data_from_table("Projects", None)
+        return {"projects_data": projects_data}
+
+    except Exception as e:
+        return {"error": f"Failed to retrieve data: {str(e)}"}
 
 @app.post("/extract_text")
 async def extract_text_endpoint(file: UploadFile = File(...)):
