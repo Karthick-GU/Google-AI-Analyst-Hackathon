@@ -10,15 +10,25 @@ const IMPORT_FLAG_KEY = "localStorage_imported";
 const hasEssentialData = (): boolean => {
   try {
     const projects = localStorage.getItem("projects");
-    const experiments = localStorage.getItem("experimentsList");
-    const bmcData = localStorage.getItem("bmcData");
+    const experimentsList = localStorage.getItem("experimentsList");
+    const bmcDataList = localStorage.getItem("bmcDataList");
+    const hypothesesList = localStorage.getItem("hypothesesList");
 
     // Check if data exists AND contains meaningful content (not empty arrays/objects)
-    const hasProjects = projects && projects !== "[]" && JSON.parse(projects).length > 0;
-    const hasExperiments = experiments && experiments !== "[]" && JSON.parse(experiments).length > 0;
-    const hasBmcData = bmcData && bmcData !== "{}" && Object.keys(JSON.parse(bmcData)).length > 0;
+    const hasProjects =
+      projects && projects !== "[]" && JSON.parse(projects).length > 0;
+    const hasExperiments =
+      experimentsList &&
+      experimentsList !== "[]" &&
+      JSON.parse(experimentsList).length > 0;
+    const hasBmcData =
+      bmcDataList && bmcDataList !== "[]" && JSON.parse(bmcDataList).length > 0;
+    const hasHypotheses =
+      hypothesesList &&
+      hypothesesList !== "[]" &&
+      JSON.parse(hypothesesList).length > 0;
 
-    return !!(hasProjects || hasExperiments || hasBmcData);
+    return !!(hasProjects || hasExperiments || hasBmcData || hasHypotheses);
   } catch (error) {
     // If JSON parsing fails, assume no essential data
     console.warn("Error parsing localStorage data:", error);
@@ -31,29 +41,91 @@ const hasBeenImported = (): boolean => {
   return localStorage.getItem(IMPORT_FLAG_KEY) === "true";
 };
 
-// Import localStorage data from static JSON file
+// Import localStorage data from APIs
 export const importLocalStorage = async (): Promise<boolean> => {
   try {
-    const response = await fetch("/localStorage_backup.json");
+    console.log("Starting API import...");
+
+    // Fetch Projects Data
+    const projectsResponse = await fetch(
+      "https://google-hackathon-api-161123521898.asia-south1.run.app/get_all_project_data"
+    );
+    if (projectsResponse.ok) {
+      const projectsData = await projectsResponse.json();
+      if (projectsData.projects_data) {
+        const mappedProjects = projectsData.projects_data.map((p: any) => ({
+          project_id: Number.parseInt(p["project-id"] || "0"),
+          project_name: p.project_name,
+          project_description: p.project_description,
+          sector: p.sector,
+          funding_stage: p.funding_stage,
+          team_size: Number.parseInt(p.team_size || "0"),
+          project_document: p.project_document,
+          cost_structure: p.cost_structure,
+          revenue_potential: p.revenue_potential,
+        }));
+        localStorage.setItem("projects", JSON.stringify(mappedProjects));
+      }
+    }
+
+    // Fetch All Other Data (BMC, Hypotheses, Experiments)
+    const response = await fetch(
+      "https://google-hackathon-api-161123521898.asia-south1.run.app/get_all_data"
+    );
 
     if (!response.ok) {
-      console.error("localStorage_backup.json not found or not accessible");
+      console.error("API get_all_data failed");
       return false;
     }
 
-    const data: LocalStorageData = await response.json();
+    const data = await response.json();
 
-    // Import all data
-    for (const key in data) {
-      localStorage.setItem(key, data[key]);
+    // Process BMC Data
+    if (data.bmc_data) {
+      const bmcDataList = data.bmc_data.map((item: any) => {
+        const bmcData: any = {};
+        // Parse each BMC field which is a stringified JSON array
+        Object.keys(item).forEach((key) => {
+          if (key !== "project-id") {
+            try {
+              bmcData[key] = JSON.parse(item[key]);
+            } catch (e) {
+              // If parsing fails, keep as is (or empty array)
+              console.warn(`Failed to parse BMC data for key ${key}:`, e);
+              bmcData[key] = item[key];
+            }
+          }
+        });
+        return {
+          projectId: Number.parseInt(item["project-id"]),
+          bmcData: bmcData,
+        };
+      });
+      localStorage.setItem("bmcDataList", JSON.stringify(bmcDataList));
+    }
+
+    // Process Hypotheses Data
+    if (data.hypotheses_data) {
+      const hypothesesList = data.hypotheses_data.map((item: any) => ({
+        projectId: Number.parseInt(item["project-id"]),
+        hypotheses: JSON.parse(item.hypotheses || "[]"),
+      }));
+      localStorage.setItem("hypothesesList", JSON.stringify(hypothesesList));
+    }
+
+    // Process Experiments Data
+    if (data.experiments_data) {
+      const experimentsList = data.experiments_data.map((item: any) => ({
+        projectId: Number.parseInt(item["project-id"]),
+        experiments: JSON.parse(item.experiments || "[]"),
+      }));
+      localStorage.setItem("experimentsList", JSON.stringify(experimentsList));
     }
 
     // Set import flag
     localStorage.setItem(IMPORT_FLAG_KEY, "true");
 
-    console.log(
-      "localStorage imported successfully from localStorage_backup.json"
-    );
+    console.log("localStorage imported successfully from APIs");
     return true;
   } catch (error) {
     console.error("Error importing localStorage:", error);
@@ -73,7 +145,7 @@ export const autoImportOnStartup = async (): Promise<void> => {
 
     if (success) {
       // Reload the page to reflect imported data
-      window.location.reload();
+      globalThis.location.reload();
     } else {
       // Mark as attempted to avoid trying again
       localStorage.setItem(IMPORT_FLAG_KEY, "true");

@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import Dashboard from "./pages/Dashboard";
 import ProjectIntake from "./pages/ProjectIntake";
 import BMCEditor from "./pages/BMCEditor";
@@ -13,10 +14,16 @@ import LearningCard from "./pages/LearningCard";
 import ProjectMetrics from "./pages/ProjectMetrics";
 import PortfolioDashboard from "./pages/PortfolioDashboard";
 import NotFound from "./pages/NotFound";
+import { autoImportOnStartup } from "./utils/localStorageImport";
 
 const queryClient = new QueryClient();
 
 const App = () => {
+  useEffect(() => {
+    // Auto-import localStorage data on startup if empty
+    autoImportOnStartup();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

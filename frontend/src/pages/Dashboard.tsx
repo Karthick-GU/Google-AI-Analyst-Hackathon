@@ -9,7 +9,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, FileText, BarChart3, Target, FlaskConical, DollarSign, TrendingUp } from "lucide-react";
+import {
+  Plus,
+  FileText,
+  BarChart3,
+  Target,
+  FlaskConical,
+  DollarSign,
+  TrendingUp,
+} from "lucide-react";
 import heroImage from "@/assets/hero-dashboard.jpg";
 
 interface Project {
@@ -32,18 +40,22 @@ const Dashboard = () => {
   // Format currency to millions
   const formatCurrency = (value: string) => {
     if (!value) return "N/A";
-    
+
     // Remove any existing currency symbols and commas
-    const numericValue = parseFloat(value.replace(/[^\d.-]/g, ''));
-    
+    const numericValue = parseFloat(value.replace(/[^\d.-]/g, ""));
+
     if (isNaN(numericValue)) return value; // Return original if not a number
-    
+
     if (numericValue >= 1000000) {
       const millions = numericValue / 1000000;
-      return `$${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`;
+      return `$${
+        millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)
+      }M`;
     } else if (numericValue >= 1000) {
       const thousands = numericValue / 1000;
-      return `$${thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)}K`;
+      return `$${
+        thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)
+      }K`;
     } else {
       return `$${numericValue.toLocaleString()}`;
     }
@@ -51,20 +63,51 @@ const Dashboard = () => {
 
   // Load projects from localStorage on component mount
   useEffect(() => {
-    const loadProjects = () => {
+    const loadProjects = async () => {
+      // 1. Load from localStorage first for immediate display
       try {
         const storedProjects = localStorage.getItem("projects");
         if (storedProjects) {
           const parsedProjects = JSON.parse(storedProjects);
           setProjects(parsedProjects);
         } else {
-          // If no projects in localStorage, use default projects and save them
           setProjects(defaultProjects);
-          localStorage.setItem("projects", JSON.stringify(defaultProjects));
         }
       } catch (error) {
-        console.error("Error loading projects from localStorage:", error);
+        console.error(
+          "Error loading initial projects from localStorage:",
+          error
+        );
         setProjects(defaultProjects);
+      }
+
+      // 2. Fetch from API and update
+      try {
+        const response = await fetch(
+          "https://google-hackathon-api-161123521898.asia-south1.run.app/get_all_project_data"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.projects_data) {
+            const mappedProjects = data.projects_data.map((p: any) => ({
+              project_id: Number.parseInt(p["project-id"] || "0"),
+              project_name: p.project_name,
+              project_description: p.project_description,
+              sector: p.sector,
+              funding_stage: p.funding_stage,
+              team_size: Number.parseInt(p.team_size || "0"),
+              project_document: p.project_document,
+              cost_structure: p.cost_structure,
+              revenue_potential: p.revenue_potential,
+            }));
+
+            // Update localStorage and state
+            localStorage.setItem("projects", JSON.stringify(mappedProjects));
+            setProjects(mappedProjects);
+          }
+        }
+      } catch (apiError) {
+        console.error("Error fetching projects API:", apiError);
       }
     };
 
@@ -184,7 +227,7 @@ const Dashboard = () => {
                         {project.team_size} members
                       </span>
                     </div>
-                    
+
                     {/* Financial Overview */}
                     {(project.cost_structure || project.revenue_potential) && (
                       <div className="flex items-center justify-between pt-2 border-t border-muted">
@@ -192,18 +235,22 @@ const Dashboard = () => {
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <DollarSign className="h-4 w-4 text-red-500" />
-                            <span className="text-xs text-muted-foreground">Invest</span>
+                            <span className="text-xs text-muted-foreground">
+                              Invest
+                            </span>
                           </div>
                           <span className="font-semibold text-red-600">
                             {formatCurrency(project.cost_structure || "")}
                           </span>
                         </div>
-                        
+
                         {/* Return (Right) */}
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1">
                             <TrendingUp className="h-4 w-4 text-green-500" />
-                            <span className="text-xs text-muted-foreground">Return</span>
+                            <span className="text-xs text-muted-foreground">
+                              Return
+                            </span>
                           </div>
                           <span className="font-semibold text-green-600">
                             {formatCurrency(project.revenue_potential || "")}
