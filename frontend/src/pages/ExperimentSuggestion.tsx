@@ -177,7 +177,9 @@ const ExperimentSuggestion = () => {
   const [experiments, setExperiments] = useState<ExperimentSuggestion[]>([]);
   const [hasExistingExperiments, setHasExistingExperiments] =
     useState<boolean>(false);
-  const [aiDoableMap, setAiDoableMap] = useState<{ [key: number]: boolean }>({});
+  const [aiDoableMap, setAiDoableMap] = useState<{ [key: number]: boolean }>(
+    {}
+  );
 
   useEffect(() => {
     // Initialize ai_doable values (default True if missing)
@@ -196,7 +198,6 @@ const ExperimentSuggestion = () => {
     }));
     // Optionally, update experiments array or persist changes if needed
   };
-
 
   // Load experiments from localStorage based on project ID
   useEffect(() => {
@@ -231,7 +232,11 @@ const ExperimentSuggestion = () => {
   const handleExperimentClick = (experimentIndex: number) => {
     // Navigate directly to test cards with the experiment identifier
     const experiment = experiments[experimentIndex];
-    navigate(`/project/${projectId}/test-cards?experimentName=${encodeURIComponent(experiment.experiment_name)}`);
+    navigate(
+      `/project/${projectId}/test-cards?experimentName=${encodeURIComponent(
+        experiment.experiment_name
+      )}`
+    );
   };
 
   const getTypeColor = (type: string) => {
@@ -319,7 +324,6 @@ const ExperimentSuggestion = () => {
                 </div>
               </div>
             </div>
-
           </CardContent>
         </Card>
 
@@ -395,7 +399,9 @@ const ExperimentSuggestion = () => {
                       <input
                         type="checkbox"
                         checked={aiDoableMap[index] ?? true}
-                        onChange={(e) => handleAiDoableChange(index, e.target.checked)}
+                        onChange={(e) =>
+                          handleAiDoableChange(index, e.target.checked)
+                        }
                         id={`ai-doable-${index}`}
                       />
                       <label htmlFor={`ai-doable-${index}`} className="text-sm">
@@ -403,15 +409,12 @@ const ExperimentSuggestion = () => {
                       </label>
                     </div>
                   </div>
-
                 </CardHeader>
-
 
                 <CardContent className="space-y-4">
                   <p className="text-sm leading-relaxed">
                     {experiment.description}
                   </p>
-
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex items-center gap-2 text-sm">
@@ -419,7 +422,7 @@ const ExperimentSuggestion = () => {
                       <div>
                         <div className="font-medium">Cost</div>
                         <div className="text-muted-foreground">
-                          ${experiment.cost_range}
+                          {experiment.cost_range}
                         </div>
                       </div>
                     </div>
@@ -444,7 +447,6 @@ const ExperimentSuggestion = () => {
                       </div>
                     </div>
                   </div>
-
 
                   <div className="pt-2 border-t">
                     <div className="flex items-center justify-between">

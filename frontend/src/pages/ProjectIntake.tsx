@@ -104,10 +104,13 @@ const ProjectIntake = () => {
         form.append("project_id", String(projId));
         filesToUpload.forEach((f) => form.append("files", f));
 
-        const resp = await fetch("https://gg-api-243440749681.europe-west1.run.app/file_upload", {
-          method: "POST",
-          body: form,
-        });
+        const resp = await fetch(
+          "https://google-hackathon-api-161123521898.asia-south1.run.app/file_upload",
+          {
+            method: "POST",
+            body: form,
+          }
+        );
         if (!resp.ok) throw new Error(`Upload failed: ${resp.status}`);
         const data = await resp.json();
         if (data && Array.isArray(data.uploaded)) {
@@ -117,17 +120,9 @@ const ProjectIntake = () => {
       };
 
       // perform uploads for each category and get filenames
-      const pitchDeckNames = await uploadFiles(projectId, pitchDecks);
-      const callTranscriptNames = await uploadFiles(projectId, callTranscripts);
-      const founderUpdateNames = await uploadFiles(projectId, founderUpdates);
-      const emailNames = await uploadFiles(projectId, emails);
+      const uploadedFiles = await uploadFiles(projectId, files);
 
-      const allFileNames = [
-        ...pitchDeckNames,
-        ...callTranscriptNames,
-        ...founderUpdateNames,
-        ...emailNames,
-      ].filter(Boolean);
+      const allFileNames = [...uploadedFiles].filter(Boolean);
 
       // Create the data object
       const projectData = {
@@ -164,7 +159,7 @@ const ProjectIntake = () => {
 
       // Call the API
       const response = await fetch(
-        "https://gg-api-243440749681.europe-west1.run.app/run_bmc_pipeline",
+        "https://google-hackathon-api-161123521898.asia-south1.run.app/run_bmc_pipeline",
         {
           method: "POST",
           headers: {
@@ -253,7 +248,7 @@ const ProjectIntake = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* <div className="space-y-4">
+            <div className="space-y-4">
               <Label className="text-base font-medium">
                 Upload Startup Deck
               </Label>
@@ -310,7 +305,7 @@ const ProjectIntake = () => {
                   ))}
                 </div>
               )}
-            </div> */}
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -426,123 +421,6 @@ const ProjectIntake = () => {
                 required
               />
             </div>
-
-            <CardContent className="space-y-6">
-              {/* ...existing code... */}
-
-              {/* New section for document uploads */}
-              <div className="space-y-4">
-                <Label className="text-base font-medium">Upload Documents (optional)</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Pitch Decks */}
-                  <div>
-                    <Label>Pitch Decks</Label>
-                    <Input
-                      type="file"
-                      multiple
-                      accept=".pdf,.pptx,.docx"
-                      onChange={(e) => handleFileUpload(e, setPitchDecks)}
-                    />
-                    {pitchDecks.length > 0 && (
-                      <div className="space-y-1 mt-2">
-                        {pitchDecks.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span>{file.name}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeUploadedFile(idx, setPitchDecks)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Call Transcripts */}
-                  <div>
-                    <Label>Call Transcripts</Label>
-                    <Input
-                      type="file"
-                      multiple
-                      accept=".pdf,.docx,.txt"
-                      onChange={(e) => handleFileUpload(e, setCallTranscripts)}
-                    />
-                    {callTranscripts.length > 0 && (
-                      <div className="space-y-1 mt-2">
-                        {callTranscripts.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span>{file.name}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeUploadedFile(idx, setCallTranscripts)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Founder Updates */}
-                  <div>
-                    <Label>Founder Updates</Label>
-                    <Input
-                      type="file"
-                      multiple
-                      accept=".pdf,.docx,.txt"
-                      onChange={(e) => handleFileUpload(e, setFounderUpdates)}
-                    />
-                    {founderUpdates.length > 0 && (
-                      <div className="space-y-1 mt-2">
-                        {founderUpdates.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span>{file.name}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeUploadedFile(idx, setFounderUpdates)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {/* Emails */}
-                  <div>
-                    <Label>Emails</Label>
-                    <Input
-                      type="file"
-                      multiple
-                      accept=".pdf,.docx,.txt,.eml"
-                      onChange={(e) => handleFileUpload(e, setEmails)}
-                    />
-                    {emails.length > 0 && (
-                      <div className="space-y-1 mt-2">
-                        {emails.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm">
-                            <span>{file.name}</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeUploadedFile(idx, setEmails)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ...existing code... */}
-            </CardContent>
 
             <div className="flex gap-4 pt-4">
               <Button variant="outline" className="flex-1" asChild>

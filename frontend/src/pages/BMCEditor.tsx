@@ -67,14 +67,15 @@ const BMCEditor = () => {
 
       // Prepare API request data
       const requestData = {
-        bmc_data: bmcEntry.bmcData,
+        bmc_data: [bmcEntry.bmcData],
         project_description: currentProject.project_description,
         sector: currentProject.sector,
+        project_id: projectId,
       };
 
       // Call the hypotheses generation API
       const response = await fetch(
-        "https://gg-api-243440749681.europe-west1.run.app/run_hypotheses_agent",
+        "https://google-hackathon-api-161123521898.asia-south1.run.app/run_hypotheses_agent",
         {
           method: "POST",
           headers: {

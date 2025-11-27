@@ -321,11 +321,12 @@ const HypothesesDashboard = () => {
         })),
         project_description: currentProject.project_description,
         sector: currentProject.sector,
+        project_id: projectId,
       };
 
       // Call the experiments generation API
       const response = await fetch(
-        "https://gg-api-243440749681.europe-west1.run.app/run_experiments_agent",
+        "https://google-hackathon-api-161123521898.asia-south1.run.app/run_experiments_agent",
         {
           method: "POST",
           headers: {
@@ -359,8 +360,7 @@ const HypothesesDashboard = () => {
       );
 
       if (projectIndex !== -1) {
-        experimentsList[projectIndex].experiments =
-          result.experiments;
+        experimentsList[projectIndex].experiments = result.experiments;
       } else {
         experimentsList.push({
           experiments: result.experiments,
