@@ -2,11 +2,11 @@
 # https://github.com/firebase/firebase-tools
 
 name: Deploy to Firebase Hosting on PR
-on: 
+on:
   pull_request:
     paths:
-      - 'frontend/**'
-      - '.github/workflows/firebase-hosting-pull-request.yml'
+      - "frontend/**"
+      - ".github/workflows/firebase-hosting-pull-request.yml"
 permissions:
   checks: write
   contents: read
@@ -19,7 +19,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22.17.1'
+          node-version: "20"
+      - name: Clean install
+        run: |
+          cd frontend
+          rm -rf node_modules package-lock.json
+          npm install --no-optional
+          npm run build
       - run: cd frontend && npm i && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
