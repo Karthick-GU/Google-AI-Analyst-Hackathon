@@ -239,7 +239,8 @@ const ProjectMetrics = () => {
       group.experiments.push(experiment);
 
       // Calculate total cost for this hypothesis
-      const cost = experiment.cost_range.split(" - ")[0].replace(/[^\d]/g, "");
+      console.log("Experiment cost range:", experiment.cost_range);
+      const cost = experiment.cost_range.split("-")[1]?.replace(/[^\d]/g, "");
       group.totalCost += parseInt(cost) || 0;
     });
 
