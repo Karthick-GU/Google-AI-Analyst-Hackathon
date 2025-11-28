@@ -24,7 +24,7 @@ hypothesis_agent = LlmAgent(
     - category: which BMC component it relates to
     - hypothesis: clear, testable statement
     - risk_weight: number from 10–30
-    - type: desirability | feasibility | viability
+    - type: "AI Suggested" | "Human Added"
     - ai_doable: "Yes" or "No"
 
     Additional strict requirement:

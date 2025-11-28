@@ -175,7 +175,7 @@ const ProjectMetrics = () => {
     const insight = group.mostRecentExperiment.learningCard.insight;
 
     // Return 0 if insight is "refute" or "unclear"
-    if (insight === "refute" || insight === "unclear") {
+    if (insight === "refute" || insight === "unclear" || insight === "") {
       return "0%";
     }
 

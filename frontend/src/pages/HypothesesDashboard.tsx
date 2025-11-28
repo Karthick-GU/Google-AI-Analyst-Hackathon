@@ -88,6 +88,51 @@ const getBMCBlockStyle = (category: string) => {
       iconColor: "text-green-600",
       icon: DollarSign,
     },
+    "key-partners": {
+      bgColor: "bg-sky-50 border-sky-200",
+      iconColor: "text-sky-600",
+      icon: Handshake,
+    },
+    "key-activities": {
+      bgColor: "bg-sky-50 border-sky-200",
+      iconColor: "text-sky-600",
+      icon: CheckCircle,
+    },
+    "key-resources": {
+      bgColor: "bg-sky-50 border-sky-200",
+      iconColor: "text-sky-600",
+      icon: Building2,
+    },
+    "value-propositions": {
+      bgColor: "bg-orange-50 border-orange-200",
+      iconColor: "text-orange-600",
+      icon: Lightbulb,
+    },
+    "customer-relationships": {
+      bgColor: "bg-amber-50 border-amber-200",
+      iconColor: "text-amber-600",
+      icon: MessageCircle,
+    },
+    "channels": {
+      bgColor: "bg-amber-50 border-amber-200",
+      iconColor: "text-amber-600",
+      icon: Truck,
+    },
+    "customer-segments": {
+      bgColor: "bg-amber-50 border-amber-200",
+      iconColor: "text-amber-600",
+      icon: Users,
+    },
+    "cost-structure": {
+      bgColor: "bg-green-50 border-green-200",
+      iconColor: "text-green-600",
+      icon: FileText,
+    },
+    "revenue-streams": {
+      bgColor: "bg-green-50 border-green-200",
+      iconColor: "text-green-600",
+      icon: DollarSign,
+    },
   };
 
   return (
