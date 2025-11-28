@@ -9,31 +9,38 @@ from google.genai import types
 APP_NAME = "ai_analyst"
 USER_ID = "1234"
 SESSION_ID = "session1234"
+
 # --- Agent 2: Hypothesis Generator ---
 hypothesis_agent = LlmAgent(
     name="HypothesisAgent",
     model="gemini-2.0-flash",
     instruction="""
     You are a business validation expert.
-    The BMC JSON is available in the state as 'bmc_json'.
 
-    Generate 4-6 discrete testable hypotheses. For each hypothesis provide:
+    You will receive the Business Model Canvas (BMC) JSON from the user message.
+    Use ONLY the provided BMC JSON to generate hypotheses.
+
+    Produce 4–6 discrete testable hypotheses. For each hypothesis include:
     - category: which BMC component it relates to
     - hypothesis: clear, testable statement
-    - risk_weight: number from 10-30 (higher = more critical)
-    - type: "desirability", "feasibility", or "viability"
+    - risk_weight: number from 10–30
+    - type: desirability | feasibility | viability
     - ai_doable: "Yes" or "No"
 
-    Return ONLY valid JSON with a "hypotheses" array. No markdown, no commentary.
+    Additional strict requirement:
+    - The SUM of all risk_weight values MUST be exactly 100. 
+    Do NOT exceed 100 and do NOT go below 100.
+
+    Return ONLY valid JSON with a top-level "hypotheses" array.
+    No markdown, no commentary.
     """,
     description="Generates testable hypotheses from BMC",
     output_key="hypotheses_json",
 )
 
 def safe_load_json(s: str):
-    """Safely parse JSON from LLM response, removing markdown wrappers."""
+    """Safely parse JSON from LLM response."""
     s = s.strip()
-    # remove triple-backtick wrappers if present
     s = s.replace("```json", "").replace("```", "").strip()
     return json.loads(s)
 
@@ -41,35 +48,50 @@ def safe_load_json(s: str):
 async def hypotheses_main(bmc_data):
     session_service = InMemorySessionService()
     runner = Runner(
-        agent=hypothesis_agent, app_name=APP_NAME, session_service=session_service
+        agent=hypothesis_agent,
+        app_name=APP_NAME,
+        session_service=session_service,
     )
 
+    # Create session
     session = await session_service.create_session(
-        app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID
+        app_name=APP_NAME,
+        user_id=USER_ID,
+        session_id=SESSION_ID,
     )
 
+    # Store into state (not required for LLM, but safe)
     session.state["bmc_json"] = bmc_data
 
-    # runner.run returns an async generator of events — iterate it instead of awaiting
+    print("\nDEBUG: BMC stored in session state:\n", session.state.get("bmc_json"))
+
+    # ---- FIXED: Pass BMC JSON explicitly to LLM ----
+    llm_message = types.Content(
+        role="user",
+        parts=[
+            types.Part(
+                text=(
+                    "Generate hypotheses ONLY using this BMC JSON:\n\n"
+                    f"{json.dumps(bmc_data, indent=2)}"
+                )
+            )
+        ],
+    )
+
+    # Stream the response
+    final_event = None
     async for event in runner.run_async(
         user_id=session.user_id,
         session_id=session.id,
-        new_message=types.Content(
-            role="user",
-            parts=[
-                types.Part(text=f"Generate Hypothesis.")
-            ],
-        ),
+        new_message=llm_message,
     ):
         print("DEBUG EVENT:", event)
-        if (
-            hasattr(event, "is_final_response")
-            and event.is_final_response()
-            and getattr(event, "content", None)
-        ):
+        if hasattr(event, "is_final_response") and event.is_final_response():
+            final_event = event
             break
 
-    raw = [part.text for part in event.content.parts]
+    # Extract raw LLM text
+    raw = [part.text for part in final_event.content.parts]
     parsed = safe_load_json(raw[0])
 
     return parsed
