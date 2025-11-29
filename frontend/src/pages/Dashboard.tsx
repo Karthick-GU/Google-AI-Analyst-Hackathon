@@ -48,14 +48,12 @@ const Dashboard = () => {
 
     if (numericValue >= 1000000) {
       const millions = numericValue / 1000000;
-      return `$${
-        millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)
-      }M`;
+      return `$${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)
+        }M`;
     } else if (numericValue >= 1000) {
       const thousands = numericValue / 1000;
-      return `$${
-        thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)
-      }K`;
+      return `$${thousands % 1 === 0 ? thousands.toFixed(0) : thousands.toFixed(1)
+        }K`;
     } else {
       return `$${numericValue.toLocaleString()}`;
     }
@@ -100,8 +98,23 @@ const Dashboard = () => {
               cost_structure: p.cost_structure,
               revenue_potential: p.revenue_potential,
             }));
-
-            // Update localStorage and state
+            // Adding Extra fields to mappedProjects like innovation_risk, expected_return, status, progress, last_updated if it already in storedProjects
+            const storedProjects = localStorage.getItem("projects");
+            if (storedProjects) {
+              const parsedProjects = JSON.parse(storedProjects);
+              mappedProjects.forEach((proj: any) => {
+                const storedProj = parsedProjects.find(
+                  (p: any) => p.project_id === proj.project_id
+                );
+                if (storedProj) {
+                  proj.innovation_risk = storedProj.innovation_risk;
+                  proj.expected_return = storedProj.expected_return;
+                  proj.status = storedProj.status;
+                  proj.progress = storedProj.progress;
+                  proj.last_updated = storedProj.last_updated;
+                }
+              });
+            }
             localStorage.setItem("projects", JSON.stringify(mappedProjects));
             setProjects(mappedProjects);
           }
